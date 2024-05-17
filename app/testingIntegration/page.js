@@ -1,66 +1,168 @@
-// pages/optimize.js
 'use client';
-import React, { useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
+import { useTable, useSortBy, useGlobalFilter, useFilters } from 'react-table';
+import * as XLSX from 'xlsx';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import SideNavbar from '../components/SideNavbar';
+import Header from '../components/Header';
+import Logo from '../components/Logo';
 
-const OptimizePage = () => {
-  const [data, setData] = useState([]);
-  const [error, setError] = useState(null);
+const saveAssignment = async (assignmentData) => {
+  try {
+    const response = await fetch('/api/saveAssignments', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(assignmentData),
+    });
 
-  const handleOptimize = async () => {
+    const result = await response.json();
+    if (response.ok) {
+      console.log(result.message);
+      toast.success(result.message);
+    } else {
+      throw new Error(result.message);
+    }
+  } catch (error) {
+    console.error('Failed to save the assignment:', error);
+    toast.error(`Failed to save the assignment: ${error.message}`);
+  }
+};
+
+const AssignedOfficesPage = () => {
+  const [assignments, setAssignments] = useState([]);
+  const [filterInput, setFilterInput] = useState('');
+  const [selectedOffice, setSelectedOffice] = useState('');
+
+  useEffect(() => {
+    fetch('/api/assignments')
+      .then(response => response.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAssignments(data);
+        } else {
+          console.error('API response is not an array:', data);
+        }
+      })
+      .catch(error => console.error('Error loading assignments:', error));
+  }, []);
+
+  const data = useMemo(() => {
+    if (!Array.isArray(assignments)) return [];
+    return assignments.filter(assignment => assignment.office.includes(selectedOffice));
+  }, [assignments, selectedOffice]);
+
+  const columns = useMemo(() => [
+    { Header: 'Office', accessor: 'office' },
+    { Header: 'Assigned To', accessor: 'assigned_to' },
+    { Header: 'Role', accessor: 'role' },
+    { Header: 'Department', accessor: 'department' },
+    { Header: 'Floor', accessor: 'floor' }
+  ], []);
+
+  const {
+    getTableProps,
+    getTableBodyProps,
+    headerGroups,
+    rows,
+    prepareRow,
+    setGlobalFilter,
+  } = useTable({ columns, data }, useFilters, useGlobalFilter, useSortBy);
+
+  const handleFilterChange = e => {
+    const value = e.target.value || undefined;
+    setGlobalFilter(value);
+    setFilterInput(value);
+  };
+
+  const handleSelectOffice = e => {
+    setSelectedOffice(e.target.value);
+  };
+
+  const exportToExcel = () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/optimize', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          distances: {
-            Employee1: { Office1: 10, Office2: 20 },
-            Employee2: { Office1: 20, Office2: 10 },
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error from server:', errorData);
-        setError(errorData.error);
-      } else {
-        const result = await response.json();
-        setData(result);
-        setError(null);
-      }
-    } catch (err) {
-      console.error('Fetch error:', err);
-      setError('An error occurred while optimizing.');
+      const ws = XLSX.utils.json_to_sheet(data);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Assigned Offices");
+      XLSX.writeFile(wb, "assigned_offices.xlsx");
+      console.log("Export function called."); 
+      toast.success(`File has been successfully exported: assigned_offices.xlsx`);
+    } catch (error) {
+      console.error("Export failed:", error); 
+      toast.error(`Failed to export file: ${error.message}`); 
     }
   };
 
+  const saveData = () => {
+    saveAssignment(data); 
+  };
+
   return (
-    <div>
-      <h1>Optimize Employee Office Assignment</h1>
-      <button onClick={handleOptimize}>Optimize</button>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
-      <table border="1">
-        <thead>
-          <tr>
-            <th>Employee</th>
-            <th>Office</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.keys(data).map((employee) =>
-            Object.keys(data[employee]).map((office) => (
-              <tr key={`${employee}-${office}`}>
-                <td>{employee}</td>
-                <td>{office}</td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+    <div className="flex min-h-screen bg-gray-100">
+      <SideNavbar />
+      <div className="flex-1 flex flex-col">
+        <Header />
+        <Logo />
+        <div className="flex flex-col items-center justify-center p-8">
+          <h1 className="text-2xl font-bold text-center mb-4">Assigned Offices Page</h1>
+          <div style={{ margin: '10px 0' }}>
+            <input
+              value={filterInput}
+              onChange={handleFilterChange}
+              placeholder="Search by name..."
+            />
+            <select onChange={handleSelectOffice} defaultValue="">
+              <option value="">All Offices</option>
+              {[...new Set(assignments.map(item => item.office))].map(office => (
+                <option key={office} value={office}>{office}</option>
+              ))}
+            </select>
+          </div>
+          <button onClick={exportToExcel} className="mb-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+            Export to Excel
+          </button>
+          <button onClick={saveData} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+              Save Assignment
+            </button>
+          <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
+          <div className="overflow-x-auto">
+            <table {...getTableProps()} style={{ margin: 'auto', borderCollapse: 'collapse', border: 'solid 1px gray', width: '100%' }}>
+              <thead>
+                {headerGroups.map(headerGroup => (
+                  <tr {...headerGroup.getHeaderGroupProps()}>
+                    {headerGroup.headers.map(column => (
+                      <th {...column.getHeaderProps(column.getSortByToggleProps())} style={{ borderBottom: 'solid 3px blue', background: 'aliceblue', color: 'black', fontWeight: 'bold', padding: '10px', border: 'solid 1px gray' }}>
+                        {column.render('Header')}
+                        <span>
+                          {column.isSorted ? (column.isSortedDesc ? ' 🔽' : ' 🔼') : ''} 
+                        </span>
+                      </th>
+                    ))}
+                  </tr>
+                ))}
+              </thead>
+              <tbody {...getTableBodyProps()}>
+                {rows.map(row => {
+                  prepareRow(row);
+                  return (
+                    <tr {...row.getRowProps()}>
+                      {row.cells.map(cell => (
+                        <td {...cell.getCellProps()} style={{ padding: '10px', border: 'solid 1px gray', textAlign: 'center' }}>
+                          {cell.render('Cell')}
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
 
-export default OptimizePage;
+export default AssignedOfficesPage;
