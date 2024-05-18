@@ -37,50 +37,21 @@ const AssignedOfficesPage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState('');
 
   useEffect(() => {
-    fetch('/Departments-Mock-Data.txt')
-      .then(response => response.text())
-      .then(text => parseData(text))
-      .catch(error => console.error('Error loading department data:', error));
+    const assignments = JSON.parse(localStorage.getItem('assignments') || '[]');
+    setStaffMembers(assignments);
   }, []);
-
-  const parseData = (text) => {
-    const lines = text.split('\n');
-    const staff = [];
-    let currentDepartment = '';
-
-    lines.forEach(line => {
-      if (line.includes('Role')) {
-        const role = line.match(/Role:(.*?) Name:/)[1].trim();
-        const name = line.match(/Name:(.*)/)[1].trim();
-        staff.push({
-          name,
-          role,
-          department: currentDepartment,
-          officeNumber: `Office ${100 + staff.length}`,
-          currentOccupancy: Math.floor(Math.random() * 2) + 1,
-          capacity: 3,
-          floor: Math.floor(Math.random() * 5) + 1
-        });
-      } else if (line.includes(':')) {
-        currentDepartment = line.split(':')[0].trim();
-      }
-    });
-
-    setStaffMembers(staff);
-  };
 
   const data = useMemo(() => {
     return staffMembers.filter(person => person.department.includes(selectedDepartment));
   }, [staffMembers, selectedDepartment]);
 
   const columns = useMemo(() => [
-    { Header: 'Office Number', accessor: 'officeNumber' },
+    { Header: 'Office NO', accessor: 'officeNumber' },
     { Header: 'Person Occupying', accessor: 'name' },
     { Header: 'Role', accessor: 'role' },
-    { Header: 'Department Occupying', accessor: 'department' },
     { Header: 'Current Occupation', accessor: 'currentOccupancy' },
     { Header: 'Capacity', accessor: 'capacity' },
-    { Header: 'Floor Number', accessor: 'floor' },
+    { Header: 'Floor', accessor: 'floor' },
   ], []);
 
   const {
@@ -128,6 +99,12 @@ const AssignedOfficesPage = () => {
         <Logo />
         <div className="flex flex-col items-center justify-center p-8">
           <h1 className="text-2xl font-bold text-center mb-4">Assigned Offices Page</h1>
+          <div className="mb-4">
+            {staffMembers.length > 0 && <h2 className="text-lg font-semibold mb-2">{staffMembers[0].assignee}</h2>}
+            <button onClick={() => alert(staffMembers[0].description)} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mb-2">
+              Description
+            </button>
+          </div>
           <div style={{ margin: '10px 0' }}>
             <input
               value={filterInput}

@@ -1,117 +1,129 @@
-from fastapi import FastAPI
-from pydantic import BaseModel
-from typing import List
+from fastapi import FastAPI, HTTPException
+import numpy as np
 import gurobipy as gp
 from gurobipy import GRB
 import pandas as pd
-import os
 
 app = FastAPI()
 
-class OfficeAssignment(BaseModel):
-    office: str
-    assigned_to: str
-    role: str
-    department: str
-    floor: int
+def parse_offices(file_path):
+    try:
+        offices_data = pd.read_csv(file_path, header=None, sep=':', engine='python')
+        offices = {}
+        for _, row in offices_data.iterrows():
+            floor, office_str = row[0], row[1]
+            for office_info in office_str.split(','):
+                office, capacity = office_info.split('(')
+                capacity = int(capacity.replace(')', ''))
+                offices[office] = {
+                    'floor': floor.replace('floor', ''),
+                    'capacity': capacity
+                }
+        return offices
+    except pd.errors.ParserError as e:
+        raise HTTPException(status_code=500, detail=f"Error parsing CSV file: {e}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {e}")
 
-def run_gurobi_model():
-    # Load the employee data from CSV using an absolute path and specify encoding
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    employee_csv_path = os.path.join(base_dir, 'employee_data.csv')
-    office_csv_path = os.path.join(base_dir, 'offices.csv')
-    employee_data = pd.read_csv(employee_csv_path, encoding='latin1')
-    office_data = pd.read_csv(office_csv_path, encoding='latin1')
+def clean_data(data):
+    data.columns = [col.strip() for col in data.columns]
+    data = data.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    return data
 
-    # Limit the number of employees and offices to fit the license limit
-    max_employees = 50  # Adjust this number to fit within the license limits
-    max_offices = 20    # Adjust this number to fit within the license limits
+@app.get("/optimize")
+def optimize():
+    employee_file_path = 'employee_data.csv'
+    office_file_path = 'offices.csv'
+    
+    try:
+        employee_data = pd.read_csv(employee_file_path, encoding='iso-8859-1')
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error reading employee data: {e}")
 
-    employees = employee_data['Name'].tolist()[:max_employees]
-    roles = employee_data['Role'].tolist()[:max_employees]
-    departments = employee_data['Department'].tolist()[:max_employees]
+    employee_data = clean_data(employee_data)
+    
+    offices = parse_offices(office_file_path)
 
-    # Process office data
-    offices = []
-    capacities = {}
-    floors = {}
-    for index, row in office_data.iterrows():
-        floor_data = row[0].split(':')
-        floor = int(floor_data[0].replace('floor', ''))
-        office_list = floor_data[1].split(',')
-        for office in office_list:
-            office_name, capacity = office.split('(')
-            capacity = int(capacity.replace(')', ''))
-            offices.append(office_name)
-            capacities[office_name] = capacity
-            floors[office_name] = floor
-            if len(offices) >= max_offices:
-                break
-        if len(offices) >= max_offices:
-            break
+    # Print debug information for offices
+    print("Parsed Offices:", offices)
+    
+    departments = employee_data['Department'].unique()
 
-    # Ensure unique employee names by appending a unique identifier
-    unique_employees = []
-    employee_count = {}
-    for emp in employees:
-        if emp in employee_count:
-            employee_count[emp] += 1
-            unique_employees.append(f"{emp}_{employee_count[emp]}")
-        else:
-            employee_count[emp] = 1
-            unique_employees.append(emp)
+    # Employees and their roles
+    employees = [f"{name}_{i}" for i, name in enumerate(employee_data['Name'])]
+    employee_roles = employee_data['Role'].tolist()
+    employee_departments = employee_data['Department'].tolist()
 
-    # Create a Gurobi model
+    # Print debug information for employees
+    print("Employees:", employees)
+    print("Employee Roles:", employee_roles)
+    print("Employee Departments:", employee_departments)
+
+    # Define role weights
+    role_weights = {
+        'Department Chair': 3,
+        'Prof.': 2.5,
+        'Assoc. Prof.': 2,
+        'Assist Prof.': 1.5,
+        'Ph.D': 1.35,
+        'Teaching Assist.': 1,
+        'Prof. (Part time)': 0.1
+    }
+
     model = gp.Model('EmployeeOfficeAssignment')
 
-    # Decision variables
-    assignment = model.addVars(unique_employees, offices, vtype=GRB.BINARY, name="Assign")
+    # Assignment variables
+    assignment = {}
+    for e, role, dept in zip(employees, employee_roles, employee_departments):
+        assignment[e] = {o: model.addVar(vtype=GRB.BINARY, name=f"Assign_{e}_{o}") for o in offices.keys()}
 
-    # Objective: maximize assignment (dummy objective since we removed preferences)
-    objective = gp.quicksum(assignment[e, o] for e in unique_employees for o in offices)
+    # Set objective to maximize role weights
+    objective = gp.quicksum(assignment[e][o] * role_weights[role] for e, role in zip(employees, employee_roles) for o in assignment[e])
     model.setObjective(objective, GRB.MAXIMIZE)
 
-    # Constraints
-    # Each employee assigned to exactly one office
-    for e in unique_employees:
-        model.addConstr(assignment.sum(e, '*') == 1, name=f"OneOffice_{e}")
+    # Constraint: Each employee to exactly one office
+    for e in employees:
+        model.addConstr(gp.quicksum(assignment[e][o] for o in assignment[e]) == 1)
 
-    # Office capacities
-    for o in offices:
-        model.addConstr(assignment.sum('*', o) <= capacities[o], name=f"Cap_{o}")
+    # Print debug information for constraints
+    print("Office Capacities:", {o: offices[o]['capacity'] for o in offices.keys()})
+    
+    # Constraint: Office capacities
+    for o in offices.keys():
+        model.addConstr(gp.quicksum(assignment[e][o] for e in employees) <= offices[o]['capacity'])
+
+    # Unique offices for Department Chairs
+    for dept in departments:
+        chairs = [e for e, role in zip(employees, employee_roles) if role == 'Department Chair' and employee_departments[employees.index(e)] == dept]
+        if chairs:
+            for e in chairs:
+                model.addConstr(gp.quicksum(assignment[e][o] for o in assignment[e]) == 1)
 
     # Optimize the model
     model.optimize()
 
-    # Debugging: Check for infeasibility
-    if model.status == GRB.INFEASIBLE:
+    if model.status == GRB.OPTIMAL:
+        solution = {e: [o for o in assignment[e] if assignment[e][o].X > 0.5][0] for e in employees}
+        office_occupancy = {o: 0 for o in offices.keys()}
+        for e in solution:
+            office_occupancy[solution[e]] += 1
+        assignments = [
+            {
+                "name": e.split('_')[0],
+                "id": e.split('_')[1],
+                "office": office,
+                "role": role,
+                "department": dept,
+                "floor": offices[office]['floor'],
+                "capacity": offices[office]['capacity'],
+                "occupancy": office_occupancy[office]
+            }
+            for e, office, role, dept in zip(employees, solution.values(), employee_roles, employee_departments)
+        ]
+        return assignments
+    else:
+        # Print infeasibility information
         model.computeIIS()
         model.write("model.ilp")
-
-    # Extract the solution
-    assignments = []
-    if model.status == GRB.OPTIMAL:
-        solution = model.getAttr('X', assignment)
-        for e in unique_employees:
-            for o in offices:
-                if solution[e, o] > 0.5:
-                    original_emp = e.split('_')[0]
-                    emp_index = employees.index(original_emp)
-                    assignments.append({
-                        "office": o,
-                        "assigned_to": original_emp,
-                        "role": roles[emp_index],
-                        "department": departments[emp_index],
-                        "floor": floors[o]
-                    })
-
-    return assignments
-
-@app.get("/assignments", response_model=List[OfficeAssignment])
-def get_assignments():
-    results = run_gurobi_model()
-    return results
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+        print("Infeasible constraints written to model.ilp")
+        return {"error": "No feasible solution found"}

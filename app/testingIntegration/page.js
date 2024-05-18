@@ -55,11 +55,12 @@ const AssignedOfficesPage = () => {
   }, [assignments, selectedOffice]);
 
   const columns = useMemo(() => [
-    { Header: 'Office', accessor: 'office' },
-    { Header: 'Assigned To', accessor: 'assigned_to' },
-    { Header: 'Role', accessor: 'role' },
+    { Header: 'Office Number', accessor: 'office' },
+    { Header: 'Person', accessor: 'name' },
     { Header: 'Department', accessor: 'department' },
-    { Header: 'Floor', accessor: 'floor' }
+    { Header: 'Current Occupancy', accessor: 'occupancy' },
+    { Header: 'Capacity', accessor: 'capacity' },
+    { Header: 'Floor NO', accessor: 'floor' }
   ], []);
 
   const {
@@ -124,8 +125,8 @@ const AssignedOfficesPage = () => {
             Export to Excel
           </button>
           <button onClick={saveData} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-              Save Assignment
-            </button>
+            Save Assignment
+          </button>
           <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
           <div className="overflow-x-auto">
             <table {...getTableProps()} style={{ margin: 'auto', borderCollapse: 'collapse', border: 'solid 1px gray', width: '100%' }}>
