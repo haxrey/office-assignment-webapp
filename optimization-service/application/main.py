@@ -5,7 +5,6 @@ import gurobipy as gp
 from gurobipy import GRB
 import pandas as pd
 import os
-import re
 
 app = FastAPI()
 
@@ -16,34 +15,41 @@ class OfficeAssignment(BaseModel):
     department: str
     floor: int
 
-def parse_offices(csv_file_path):
-    offices = []
-    with open(csv_file_path, 'r', encoding='latin1') as file:
-        for line in file:
-            if line.startswith('floor'):
-                floor_number = int(re.findall(r'\d+', line)[0])
-                office_entries = re.findall(r'(\w+\(\d+\))', line)
-                for entry in office_entries:
-                    office_name = re.findall(r'(\w+)', entry)[0]
-                    capacity = int(re.findall(r'\((\d+)\)', entry)[0])
-                    offices.append((floor_number, office_name, capacity))
-    return offices
-
 def run_gurobi_model():
     # Load the employee data from CSV using an absolute path and specify encoding
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    employee_csv = os.path.join(base_dir, 'employee_data.csv')
-    office_csv = os.path.join(base_dir, 'offices.csv')
-    
-    employee_data = pd.read_csv(employee_csv, encoding='latin1')
-    employees = employee_data['Name'].tolist()
-    roles = employee_data['Role'].tolist()
-    departments = employee_data['Department'].tolist()
-    
-    offices = parse_offices(office_csv)
-    office_names = [office[1] for office in offices]
-    office_capacities = {office[1]: office[2] for office in offices}
-    
+    employee_csv_path = os.path.join(base_dir, 'employee_data.csv')
+    office_csv_path = os.path.join(base_dir, 'offices.csv')
+    employee_data = pd.read_csv(employee_csv_path, encoding='latin1')
+    office_data = pd.read_csv(office_csv_path, encoding='latin1')
+
+    # Limit the number of employees and offices to fit the license limit
+    max_employees = 50  # Adjust this number to fit within the license limits
+    max_offices = 20    # Adjust this number to fit within the license limits
+
+    employees = employee_data['Name'].tolist()[:max_employees]
+    roles = employee_data['Role'].tolist()[:max_employees]
+    departments = employee_data['Department'].tolist()[:max_employees]
+
+    # Process office data
+    offices = []
+    capacities = {}
+    floors = {}
+    for index, row in office_data.iterrows():
+        floor_data = row[0].split(':')
+        floor = int(floor_data[0].replace('floor', ''))
+        office_list = floor_data[1].split(',')
+        for office in office_list:
+            office_name, capacity = office.split('(')
+            capacity = int(capacity.replace(')', ''))
+            offices.append(office_name)
+            capacities[office_name] = capacity
+            floors[office_name] = floor
+            if len(offices) >= max_offices:
+                break
+        if len(offices) >= max_offices:
+            break
+
     # Ensure unique employee names by appending a unique identifier
     unique_employees = []
     employee_count = {}
@@ -54,15 +60,15 @@ def run_gurobi_model():
         else:
             employee_count[emp] = 1
             unique_employees.append(emp)
-    
+
     # Create a Gurobi model
     model = gp.Model('EmployeeOfficeAssignment')
 
     # Decision variables
-    assignment = model.addVars(unique_employees, office_names, vtype=GRB.BINARY, name="Assign")
+    assignment = model.addVars(unique_employees, offices, vtype=GRB.BINARY, name="Assign")
 
     # Objective: maximize assignment (dummy objective since we removed preferences)
-    objective = gp.quicksum(assignment[e, o] for e in unique_employees for o in office_names)
+    objective = gp.quicksum(assignment[e, o] for e in unique_employees for o in offices)
     model.setObjective(objective, GRB.MAXIMIZE)
 
     # Constraints
@@ -71,8 +77,8 @@ def run_gurobi_model():
         model.addConstr(assignment.sum(e, '*') == 1, name=f"OneOffice_{e}")
 
     # Office capacities
-    for o in office_names:
-        model.addConstr(assignment.sum('*', o) <= office_capacities[o], name=f"Cap_{o}")
+    for o in offices:
+        model.addConstr(assignment.sum('*', o) <= capacities[o], name=f"Cap_{o}")
 
     # Optimize the model
     model.optimize()
@@ -86,19 +92,17 @@ def run_gurobi_model():
     assignments = []
     if model.status == GRB.OPTIMAL:
         solution = model.getAttr('X', assignment)
-        for i, e in enumerate(unique_employees):
-            for o in office_names:
+        for e in unique_employees:
+            for o in offices:
                 if solution[e, o] > 0.5:
                     original_emp = e.split('_')[0]
-                    role = roles[employees.index(original_emp)]
-                    department = departments[employees.index(original_emp)]
-                    floor = next(office[0] for office in offices if office[1] == o)
+                    emp_index = employees.index(original_emp)
                     assignments.append({
-                        "office": o, 
-                        "assigned_to": original_emp, 
-                        "role": role, 
-                        "department": department, 
-                        "floor": floor
+                        "office": o,
+                        "assigned_to": original_emp,
+                        "role": roles[emp_index],
+                        "department": departments[emp_index],
+                        "floor": floors[o]
                     })
 
     return assignments

@@ -11,7 +11,7 @@ export default async function handler(req, res) {
       const fileName = `save_assignment_${timestamp}.xlsx`;
       const directory = path.join(process.cwd(), 'public', 'assignments');
       
-      // Ensure the directory exists
+
       if (!fs.existsSync(directory)) {
         fs.mkdirSync(directory, { recursive: true });
       }
