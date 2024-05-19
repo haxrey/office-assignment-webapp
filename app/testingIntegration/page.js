@@ -34,7 +34,7 @@ const saveAssignment = async (assignmentData) => {
 const AssignedOfficesPage = () => {
   const [assignments, setAssignments] = useState([]);
   const [filterInput, setFilterInput] = useState('');
-  const [selectedOffice, setSelectedOffice] = useState('');
+  const [selectedDepartment, setSelectedDepartment] = useState('');
 
   useEffect(() => {
     fetch('/api/assignments')
@@ -51,8 +51,8 @@ const AssignedOfficesPage = () => {
 
   const data = useMemo(() => {
     if (!Array.isArray(assignments)) return [];
-    return assignments.filter(assignment => assignment.office.includes(selectedOffice));
-  }, [assignments, selectedOffice]);
+    return assignments.filter(assignment => assignment.department.includes(selectedDepartment));
+  }, [assignments, selectedDepartment]);
 
   const columns = useMemo(() => [
     { Header: 'Office Number', accessor: 'office' },
@@ -78,8 +78,8 @@ const AssignedOfficesPage = () => {
     setFilterInput(value);
   };
 
-  const handleSelectOffice = e => {
-    setSelectedOffice(e.target.value);
+  const handleSelectDepartment = e => {
+    setSelectedDepartment(e.target.value);
   };
 
   const exportToExcel = () => {
@@ -114,10 +114,10 @@ const AssignedOfficesPage = () => {
               onChange={handleFilterChange}
               placeholder="Search by name..."
             />
-            <select onChange={handleSelectOffice} defaultValue="">
-              <option value="">All Offices</option>
-              {[...new Set(assignments.map(item => item.office))].map(office => (
-                <option key={office} value={office}>{office}</option>
+            <select onChange={handleSelectDepartment} defaultValue="">
+              <option value="">All Departments</option>
+              {[...new Set(assignments.map(item => item.department))].map(department => (
+                <option key={department} value={department}>{department}</option>
               ))}
             </select>
           </div>

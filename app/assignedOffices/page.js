@@ -4,6 +4,7 @@ import { useTable, useSortBy, useGlobalFilter, useFilters } from 'react-table';
 import * as XLSX from 'xlsx';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useSearchParams } from 'next/navigation';
 import SideNavbar from '../components/SideNavbar';
 import Header from '../components/Header';
 import Logo from '../components/Logo';
@@ -32,23 +33,37 @@ const saveAssignment = async (assignmentData) => {
 };
 
 const AssignedOfficesPage = () => {
+  const searchParams = useSearchParams();
+  const selectedDepartment = searchParams.get('department');
   const [staffMembers, setStaffMembers] = useState([]);
   const [filterInput, setFilterInput] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('');
 
   useEffect(() => {
-    const assignments = JSON.parse(localStorage.getItem('assignments') || '[]');
-    setStaffMembers(assignments);
+    const fetchData = async () => {
+      try {
+        const response = await fetch('/api/getStaffAssignments');
+        const data = await response.json();
+        console.log('Fetched data:', data);
+        setStaffMembers(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('Error fetching data');
+      }
+    };
+
+    fetchData();
   }, []);
 
   const data = useMemo(() => {
+    if (!selectedDepartment || selectedDepartment === 'All Faculty') return staffMembers;
     return staffMembers.filter(person => person.department.includes(selectedDepartment));
   }, [staffMembers, selectedDepartment]);
 
   const columns = useMemo(() => [
     { Header: 'Office NO', accessor: 'officeNumber' },
-    { Header: 'Person Occupying', accessor: 'name' },
+    { Header: 'Person Occupying (full name)', accessor: row => `${row.firstName} ${row.lastName}` },
     { Header: 'Role', accessor: 'role' },
+    { Header: 'Department', accessor: 'department' },
     { Header: 'Current Occupation', accessor: 'currentOccupancy' },
     { Header: 'Capacity', accessor: 'capacity' },
     { Header: 'Floor', accessor: 'floor' },
@@ -67,10 +82,6 @@ const AssignedOfficesPage = () => {
     const value = e.target.value || undefined;
     setGlobalFilter(value);
     setFilterInput(value);
-  };
-
-  const handleSelectDepartment = e => {
-    setSelectedDepartment(e.target.value);
   };
 
   const exportToExcel = () => {
@@ -100,10 +111,7 @@ const AssignedOfficesPage = () => {
         <div className="flex flex-col items-center justify-center p-8">
           <h1 className="text-2xl font-bold text-center mb-4">Assigned Offices Page</h1>
           <div className="mb-4">
-            {staffMembers.length > 0 && <h2 className="text-lg font-semibold mb-2">{staffMembers[0].assignee}</h2>}
-            <button onClick={() => alert(staffMembers[0].description)} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded mb-2">
-              Description
-            </button>
+            {staffMembers.length > 0 && <h2 className="text-lg font-semibold mb-2">{staffMembers[0].firstName} {staffMembers[0].lastName}</h2>}
           </div>
           <div style={{ margin: '10px 0' }}>
             <input
@@ -111,19 +119,13 @@ const AssignedOfficesPage = () => {
               onChange={handleFilterChange}
               placeholder="Search by name..."
             />
-            <select onChange={handleSelectDepartment} defaultValue="">
-              <option value="">All Departments</option>
-              {[...new Set(staffMembers.map(item => item.department))].map(department => (
-                <option key={department} value={department}>{department}</option>
-              ))}
-            </select>
           </div>
           <button onClick={exportToExcel} className="mb-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
             Export to Excel
           </button>
           <button onClick={saveData} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-              Save Assignment
-            </button>
+            Save Assignment
+          </button>
           <ToastContainer position="top-center" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
           <div className="overflow-x-auto">
             <table {...getTableProps()} style={{ margin: 'auto', borderCollapse: 'collapse', border: 'solid 1px gray', width: '100%' }}>

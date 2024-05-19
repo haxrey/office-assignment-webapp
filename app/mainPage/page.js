@@ -3,7 +3,7 @@ import SideNavbar from '../components/SideNavbar';
 import LatestAssignments from '../components/LatestAssignment';
 import OptimizationStatus from '../components/OptimizationStatus';
 import AssignmentOverview from '../components/AssignmentOverview';
-import HistoricalAssignments from '../components/HistoricalAssignments';
+import HistoricalAssignments from '../components/FavoritedAssignments';
 import Header from '../components/Header';
 import Logo from '../components/Logo';
 

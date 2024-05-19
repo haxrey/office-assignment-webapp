@@ -1,33 +1,31 @@
-"use client";
-import React, { useState } from 'react';
-import { useRouter } from 'next/router';
-import AuthService from '../utils/AuthService';
+// app/login/page.js
 
-//FIX THE ROUTER THINGY IM LOSING MY SANITY, ORIGINALLY IT WAS LIKE THIS 
-//const router = useRouter();
-//but the code wont run if I dont NULL it so pls someone look into it ty <3
-//GIT TEST1
+'use client';
+import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import axios from 'axios';
 
 const Login = () => {
-  const [router, setRouter] = useState(null);
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const authService = new AuthService();
 
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
-      const { token } = await authService.login(username, password);
-      if (token) {
-
+      const response = await axios.post('/api/login', { username, password });
+      if (response.data.token) {
+        console.log('Login successful');
         router.push('/mainPage');
       } else {
         alert('Invalid credentials');
       }
     } catch (error) {
-      alert('Login failed: ' + error.message);
+      console.error('Login failed:', error);
+      alert('Login failed: ' + (error.response?.data?.error || error.message));
     }
   };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 relative overflow-hidden">
       <div className="absolute top-0 right-0 bg-blue-950 h-full w-1/2 flex justify-end items-center" style={{ clipPath: "ellipse(50% 100% at 100% 50%)" }}>

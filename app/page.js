@@ -11,7 +11,7 @@ const HomePage = () => {
       <header className="fixed top-0 left-0 w-full flex justify-between items-center px-4 py-1 bg-[#E2E8F0] z-10 shadow-md">
         <div className="h-10" /> 
    
-        <Link href= "/intialPage/login">
+        <Link href= "/login">
           <button className="px-4 py-1 text-white bg-blue-600 rounded-lg hover:bg-blue-900">Login</button>
         </Link>
       </header>

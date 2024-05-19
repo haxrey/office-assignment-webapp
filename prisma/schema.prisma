@@ -34,7 +34,7 @@ model Office {
   location       String
   floor          Int         @default(1)
   departmentId   String?
-  currentOccupancy Int       @default
+  currentOccupancy Int       @default(0)
   department     Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade, name: "DepartmentOffices")
 
   @@map("offices")

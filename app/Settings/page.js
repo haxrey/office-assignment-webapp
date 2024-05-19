@@ -1,40 +1,181 @@
 "use client";
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import SideNavbar from "../components/SideNavbar";
 import Header from '../components/Header';
 import Logo from '../components/Logo';
+import axios from 'axios';
 
-const SettingsPage = () => {
+const InsertionPage = () => {
+  const [departments, setDepartments] = useState([]);
+  const [staffFormData, setStaffFormData] = useState({
+    firstName: '',
+    lastName: '',
+    role: '',
+    departmentId: '',
+  });
+  const [officeFormData, setOfficeFormData] = useState({
+    officeNumber: '',
+    capacity: 0,
+    location: '',
+    floor: 1,
+  });
+
+  useEffect(() => {
+    const fetchDepartments = async () => {
+      try {
+        const response = await axios.get('/api/departments');
+        setDepartments(response.data);
+        console.log('Departments fetched:', response.data); // Debug log
+      } catch (error) {
+        console.error('Failed to fetch departments:', error);
+      }
+    };
+
+    fetchDepartments();
+  }, []);
+
+  const handleStaffChange = (e) => {
+    const { name, value } = e.target;
+    setStaffFormData({ ...staffFormData, [name]: value });
+  };
+
+  const handleOfficeChange = (e) => {
+    const { name, value } = e.target;
+    setOfficeFormData({ ...officeFormData, [name]: value });
+  };
+
+  const handleStaffSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/staff', staffFormData);
+      setStaffFormData({
+        firstName: '',
+        lastName: '',
+        role: '',
+        departmentId: '',
+      });
+      alert("Staff added successfully!");
+    } catch (error) {
+      console.error('Failed to add staff:', error);
+      alert("Failed to add staff.");
+    }
+  };
+
+  const handleOfficeSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await axios.post('/api/offices', officeFormData);
+      setOfficeFormData({
+        officeNumber: '',
+        capacity: 0,
+        location: '',
+        floor: 1,
+      });
+      alert("Office added successfully!");
+    } catch (error) {
+      console.error('Failed to add office:', error);
+      alert("Failed to add office.");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       <SideNavbar />
       <div className="flex-1 flex flex-col">
         <Header />
-        <div className="flex flex-grow">
-          <div className="w-1/2 p-8">
-            <h1 className="text-2xl font-bold mb-4">Settings</h1>
-            <form className="space-y-4">
+        <div className="flex flex-grow p-8">
+          <div className="w-1/2">
+            <h1 className="text-2xl font-bold mb-4">Add New Staff</h1>
+            <form className="space-y-4" onSubmit={handleStaffSubmit}>
               <div className="flex space-x-4">
-                <input type="text" placeholder="First Name" className="border border-gray-300 rounded p-2 flex-1"/>
-                <input type="text" placeholder="Last Name" className="border border-gray-300 rounded p-2 flex-1"/>
+                <input
+                  type="text"
+                  name="firstName"
+                  placeholder="First Name"
+                  value={staffFormData.firstName}
+                  onChange={handleStaffChange}
+                  className="border border-gray-300 rounded p-2 flex-1"
+                />
+                <input
+                  type="text"
+                  name="lastName"
+                  placeholder="Last Name"
+                  value={staffFormData.lastName}
+                  onChange={handleStaffChange}
+                  className="border border-gray-300 rounded p-2 flex-1"
+                />
               </div>
-              <input type="text" placeholder="Email Address" className="border border-gray-300 rounded p-2 w-full"/>
-              <input type="text" placeholder="University ID" className="border border-gray-300 rounded p-2 w-full"/>
-              <input type="text" placeholder="Office Location" className="border border-gray-300 rounded p-2 w-full"/>
-              <div className="flex space-x-4">
-                <input type="text" placeholder="Faculty" className="border border-gray-300 rounded p-2 flex-1"/>
-                <input type="text" placeholder="Department" className="border border-gray-300 rounded p-2 flex-1"/>
-              </div>
+              <input
+                type="text"
+                name="role"
+                placeholder="Role"
+                value={staffFormData.role}
+                onChange={handleStaffChange}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <select
+                name="departmentId"
+                value={staffFormData.departmentId}
+                onChange={handleStaffChange}
+                className="border border-gray-300 rounded p-2 w-full"
+              >
+                <option value="">Select Department</option>
+                {departments.map((dept) => (
+                  <option key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </option>
+                ))}
+              </select>
+              <button type="submit" className="bg-blue-500 text-white rounded p-2">
+                Add Staff
+              </button>
             </form>
           </div>
-          <div className="absolute top-0 right-0 bg-blue-950 h-full w-1/2 flex justify-end items-center" style={{ clipPath: "ellipse(50% 100% at 100% 50%)" }}>
-          <img src="/BAU-Istanbul-login-rightSide-image.png" alt="Background" className="h-full" style={{ objectFit: 'cover', width: 'auto', maxHeight: '100%' }} />
-        </div>
+          <div className="w-1/2 ml-8">
+            <h1 className="text-2xl font-bold mb-4">Add New Office</h1>
+            <form className="space-y-4" onSubmit={handleOfficeSubmit}>
+              <input
+                type="text"
+                name="officeNumber"
+                placeholder="Office Number"
+                value={officeFormData.officeNumber}
+                onChange={handleOfficeChange}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <input
+                type="number"
+                name="capacity"
+                placeholder="Capacity"
+                value={officeFormData.capacity}
+                onChange={handleOfficeChange}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <input
+                type="text"
+                name="location"
+                placeholder="Location"
+                value={officeFormData.location}
+                onChange={handleOfficeChange}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <input
+                type="number"
+                name="floor"
+                placeholder="Floor"
+                value={officeFormData.floor}
+                onChange={handleOfficeChange}
+                className="border border-gray-300 rounded p-2 w-full"
+              />
+              <button type="submit" className="bg-blue-500 text-white rounded p-2">
+                Add Office
+              </button>
+            </form>
+          </div>
         </div>
         <Logo />
       </div>
     </div>
   );
-}
+};
 
-export default SettingsPage;
+export default InsertionPage;
