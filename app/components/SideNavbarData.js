@@ -3,6 +3,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
+import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
 import Link from 'next/link';
 
 
@@ -17,9 +18,9 @@ export const SideNavbarData=[
         icon:<AssignmentIndIcon/>,
         link:"/OfficeAssigment"
     }, {
-        title:"Settings",
-        icon:<SettingsIcon/>,
-        link:"/Settings"
+        title:"Add Data",
+        icon:<PersonAddAltIcon/>,
+        link:"/addData"
     }, {
         title:"Logout",
         icon:<LogoutIcon/>,

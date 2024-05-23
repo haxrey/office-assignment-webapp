@@ -3,7 +3,7 @@ import SideNavbar from '../components/SideNavbar';
 import LatestAssignments from '../components/LatestAssignment';
 import OptimizationStatus from '../components/OptimizationStatus';
 import AssignmentOverview from '../components/AssignmentOverview';
-import HistoricalAssignments from '../components/FavoritedAssignments';
+import FavoritedAssignments from '../components/FavoritedAssignments';
 import Header from '../components/Header';
 import Logo from '../components/Logo';
 
@@ -25,16 +25,8 @@ const MainPage = () => {
           <section className="mb-8">
             <LatestAssignments />
           </section>
-          <section className="flex flex-wrap justify-between gap-4 mb-10">
-            <div className="flex-1">
-              <OptimizationStatus />
-            </div>
-            <div className="flex-1">
-              <AssignmentOverview />
-            </div>
-          </section>
           <section className="mb-8">
-            <HistoricalAssignments />
+            <FavoritedAssignments />
           </section>
         </main>
       </div>

@@ -1,3 +1,4 @@
+// pages/OfficeAssignment.js
 'use client';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -60,7 +61,9 @@ const OfficeAssignmentPage = () => {
       const response = await fetch(`/api/getDepartmentData?department=${department}`);
       const data = await response.json();
       localStorage.setItem('assignments', JSON.stringify(data));
-      router.push('/assignedOffices?department=' + department);
+      localStorage.setItem('assignee', assignee); // Save the assignee's name
+      localStorage.setItem('description', description); // Save the description
+      router.push(`/assignedOffices?department=${department}&assignee=${assignee}&description=${description}`);
     } catch (error) {
       console.error('Failed to fetch department data:', error);
     }

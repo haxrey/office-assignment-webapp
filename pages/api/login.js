@@ -23,7 +23,7 @@ const handler = async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // Here you would generate a token, but for simplicity we'll just return a success message
+
     res.status(200).json({ message: 'Login successful', token: 'dummy-token' });
   } else {
     res.setHeader('Allow', ['POST']);
