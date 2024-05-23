@@ -176,8 +176,9 @@ const EditModal = ({ isOpen, onClose, data, availableOffices, onUpdate, onRemove
 const AssignedOfficesPage = () => {
   const searchParams = useSearchParams();
   const initialDepartment = searchParams.get('department') || 'All Faculty';
-  const assignee = searchParams.get('assignee') || ''; //The issue was here, you need a local query i fixed it - Nour :>
-  const description = searchParams.get('description') || ''; //same but for description :>
+  const assignee = searchParams.get('assignee') || ''; //The issue was here, we needed a local query parameter i fixed it -Nour :>
+  const description = searchParams.get('description') || ''; //here as well -Nour :>
+  const priority = searchParams.get('priority') || ''; //and here as well -Nour :>
   const [staffMembers, setStaffMembers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [availableOffices, setAvailableOffices] = useState([]);
@@ -185,7 +186,7 @@ const AssignedOfficesPage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(initialDepartment);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
-  const [isInfoOpen, setIsInfoOpen] = useState(false); //Dont delete info states for the info modal thigny :>
+  const [isInfoOpen, setIsInfoOpen] = useState(false); // Info state
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -332,6 +333,7 @@ const AssignedOfficesPage = () => {
             <div className="bg-white p-6 rounded shadow-lg relative">
               <h2 className="text-xl font-bold mb-4">Information</h2>
               <p>{description}</p>
+              <p className="mt-2 font-semibold">Priority: {priority}</p>
               <button
                 onClick={() => setIsInfoOpen(false)}
                 className="absolute top-2 right-2 text-gray-700 font-bold"
