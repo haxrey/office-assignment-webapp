@@ -1,6 +1,5 @@
-// ./app/AddEntryPage/page.js
 
-'use client';  // This directive tells Next.js that the following component should be treated as a client component.
+'use client'; 
 
 import React, { useState } from 'react';
 
@@ -35,7 +34,7 @@ const AddEntryPage = () => {
       const result = await response.json();
       console.log("User added successfully:", result);
       alert('User added successfully!');
-      // Reset form fields
+      // Reset form fields here VV
       setUsername('');
       setFirstName('');
       setLastName('');

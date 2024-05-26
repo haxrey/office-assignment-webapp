@@ -1,4 +1,3 @@
-// pages/assignedOffices.js
 'use client';
 import React, { useMemo, useState, useEffect } from 'react';
 import { useTable, useSortBy, useGlobalFilter, useFilters } from 'react-table';
@@ -176,9 +175,9 @@ const EditModal = ({ isOpen, onClose, data, availableOffices, onUpdate, onRemove
 const AssignedOfficesPage = () => {
   const searchParams = useSearchParams();
   const initialDepartment = searchParams.get('department') || 'All Faculty';
-  const assignee = searchParams.get('assignee') || ''; //The issue was here, we needed a local query parameter i fixed it -Nour :>
-  const description = searchParams.get('description') || ''; //here as well -Nour :>
-  const priority = searchParams.get('priority') || ''; //and here as well -Nour :>
+  const assignee = searchParams.get('assignee') || '';
+  const description = searchParams.get('description') || '';
+  const priority = searchParams.get('priority') || '';
   const [staffMembers, setStaffMembers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [availableOffices, setAvailableOffices] = useState([]);
@@ -186,7 +185,7 @@ const AssignedOfficesPage = () => {
   const [selectedDepartment, setSelectedDepartment] = useState(initialDepartment);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editData, setEditData] = useState(null);
-  const [isInfoOpen, setIsInfoOpen] = useState(false); // Info state
+  const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -304,8 +303,25 @@ const AssignedOfficesPage = () => {
     }
   };
 
-  const saveData = () => {
-    saveAssignment(data);
+  const saveData = async () => {
+    try {
+      const response = await fetch('/api/saveAssignments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        toast.success(result.message);
+      } else {
+        toast.error(result.error || 'Failed to save the assignment');
+      }
+    } catch (error) {
+      toast.error(`Failed to save the assignment: ${error.message}`);
+    }
   };
 
   if (loading) {
@@ -326,7 +342,6 @@ const AssignedOfficesPage = () => {
               style={{ position: 'absolute', top: '0', left: '0' }}
             />
           </div>
-          {/* <h1 className="text-2xl font-bold">Assigned Offices Page</h1> */}
         </div>
         {isInfoOpen && (
           <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-50">

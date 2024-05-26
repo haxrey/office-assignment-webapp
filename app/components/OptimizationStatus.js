@@ -1,8 +1,8 @@
-// components/OptimizationStatus.js
+
 import React from 'react';
 
 const OptimizationStatus = () => {
-  // Example data, replace with real data fetching
+
   const status = {
     lastRun: '2024-05-18 14:32:00',
     runtime: '15 seconds',
