@@ -84,7 +84,8 @@ async def optimize():
         for e in solution:
             for o in solution[e]:
                 if solution[e][o] > 0.5:
-                    result.append({"employee": e, "office": o})
+                    office, dept = o.split('_', 1)
+                    result.append({"employee": e.split('_', 1)[0], "office": office, "department": dept})
     else:
         raise HTTPException(status_code=400, detail="No feasible solution found")
 
