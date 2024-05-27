@@ -2,12 +2,10 @@
 import React from 'react';
 
 const AssignmentOverview = () => {
-  // Example data, replace with real data fetching
   const overview = [
     { office: 'D112', assigned: 2, capacity: 2 },
     { office: 'D113', assigned: 3, capacity: 3 },
     { office: 'D114', assigned: 1, capacity: 2 },
-    // Add more offices as needed
   ];
 
   return (
