@@ -6,6 +6,9 @@ import * as XLSX from 'xlsx';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useSearchParams } from 'next/navigation';
+import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import SideNavbar from '../components/SideNavbar';
 import Header from '../components/Header';
 import Logo from '../components/Logo';
@@ -236,7 +239,7 @@ const AssignedOfficesPage = () => {
 
   const columns = useMemo(() => [
     { Header: 'Office NO', accessor: 'officeNumber' },
-    { Header: 'Person Occupying (full name)', accessor: row => `${row.firstName} ${row.lastName}`, id: 'fullName' },
+    { Header: 'Name', accessor: row => `${row.firstName} ${row.lastName}`, id: 'fullName' },
     { Header: 'Role', accessor: 'role' },
     { Header: 'Department', accessor: 'department' },
     { Header: 'Current Occupation', accessor: 'currentOccupancy' },
@@ -301,6 +304,35 @@ const AssignedOfficesPage = () => {
     } catch (error) {
       toast.error(`Failed to export file: ${error.message}`);
     }
+  };
+
+  const exportToPdf = () => {
+    const doc = new jsPDF();
+
+    const img = new Image();
+    img.src = '/Bahçeşehir_Üniversitesi_logo.png'; 
+    img.onload = () => {
+      const imgWidth = 50; // Width
+      const imgHeight = img.height * imgWidth / img.width; // this maintains the aspect ratio dont adjust
+      doc.addImage(img, 'PNG', (doc.internal.pageSize.width - imgWidth) / 2, 20, imgWidth, imgHeight, undefined, 'FAST');
+
+      const tableColumn = ["Office NO", "Name", "Role", "Department", "Floor"];
+      const tableRows = [];
+
+      data.forEach(item => {
+        const rowData = [
+          item.officeNumber,
+          `${item.firstName} ${item.lastName}`,
+          item.role,
+          item.department,
+          item.floor,
+        ];
+        tableRows.push(rowData);
+      });
+
+      doc.autoTable(tableColumn, tableRows, { startY: 20 + imgHeight + 10 });
+      doc.save('assigned_offices.pdf');
+    };
   };
 
   const saveData = async () => {
@@ -379,6 +411,9 @@ const AssignedOfficesPage = () => {
           <div className="flex mb-4">
             <button onClick={exportToExcel} className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2">
               Export to Excel
+            </button>
+            <button onClick={exportToPdf} className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded mr-2">
+              Export to PDF
             </button>
             <button onClick={saveData} className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
               Save Assignment

@@ -4,6 +4,7 @@ import AssignmentIndIcon from '@mui/icons-material/AssignmentInd';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LogoutIcon from '@mui/icons-material/Logout';
 import PersonAddAltIcon from '@mui/icons-material/PersonAddAlt';
+import RoomPreferencesIcon from '@mui/icons-material/RoomPreferences';
 import Link from 'next/link';
 
 
@@ -21,7 +22,13 @@ export const SideNavbarData=[
         title:"Add Data",
         icon:<PersonAddAltIcon/>,
         link:"/addData"
-    }, {
+    }, 
+    {
+      title:"Integration",
+      icon:<RoomPreferencesIcon/>,
+      link:"/integration"
+  },
+    {
         title:"Logout",
         icon:<LogoutIcon/>,
         link:"/Logout"

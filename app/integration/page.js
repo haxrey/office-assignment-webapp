@@ -6,6 +6,8 @@ import * as XLSX from 'xlsx';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 import SideNavbar from '../components/SideNavbar';
 import Header from '../components/Header';
 import Logo from '../components/Logo';
@@ -23,7 +25,7 @@ const fetchOptimizationData = async () => {
 const AssignedOfficesPage = () => {
   const [data, setData] = useState([]);
   const [filterInput, setFilterInput] = useState('');
-  const [selectedDepartment, setSelectedDepartment] = useState('All Faculty');
+  const [selectedDepartment, setSelectedDepartment] = useState('All Departments');
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editData, setEditData] = useState(null);
@@ -66,6 +68,13 @@ const AssignedOfficesPage = () => {
     []
   );
 
+  const filteredData = useMemo(() => {
+    if (selectedDepartment === 'All Departments') {
+      return data;
+    }
+    return data.filter(item => item.department === selectedDepartment);
+  }, [data, selectedDepartment]);
+
   const {
     getTableProps,
     getTableBodyProps,
@@ -73,12 +82,16 @@ const AssignedOfficesPage = () => {
     rows,
     prepareRow,
     setGlobalFilter,
-  } = useTable({ columns, data }, useFilters, useGlobalFilter, useSortBy);
+  } = useTable({ columns, data: filteredData }, useFilters, useGlobalFilter, useSortBy);
 
   const handleFilterChange = (e) => {
     const value = e.target.value || undefined;
     setGlobalFilter(value);
     setFilterInput(value);
+  };
+
+  const handleDepartmentChange = (e) => {
+    setSelectedDepartment(e.target.value);
   };
 
   const handleEdit = (data) => {
@@ -87,16 +100,16 @@ const AssignedOfficesPage = () => {
   };
 
   const handleUpdate = async (updatedData) => {
-    // Add your update logic here
+    // update logic should go here
   };
 
   const handleRemove = async (data) => {
-    // Add your remove logic here
+    // remove logic should go here as well
   };
 
   const exportToExcel = () => {
     try {
-      const ws = XLSX.utils.json_to_sheet(data);
+      const ws = XLSX.utils.json_to_sheet(filteredData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Assigned Offices');
       XLSX.writeFile(wb, 'assigned_offices.xlsx');
@@ -104,6 +117,30 @@ const AssignedOfficesPage = () => {
     } catch (error) {
       toast.error(`Failed to export file: ${error.message}`);
     }
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    const tableColumn = ['Employee', 'Office', 'Department'];
+    const tableRows = [];
+
+    filteredData.forEach(item => {
+      const rowData = [item.employee, item.office, item.department];
+      tableRows.push(rowData);
+    });
+
+   
+    const img = new Image();
+    img.src = '/Bahçeşehir_Üniversitesi_logo.png'; 
+    img.onload = () => {
+      const imgWidth = 50; // Width
+      const imgHeight = img.height * imgWidth / img.width; // this maintains the aspect ratio dont adjust
+      doc.addImage(img, 'PNG', (doc.internal.pageSize.width - imgWidth) / 2, 20, imgWidth, imgHeight, undefined, 'FAST');
+      doc.autoTable(tableColumn, tableRows, { startY: 20 + imgHeight + 10 });
+      doc.text('', 14, 15);
+      doc.save('assigned_offices.pdf');
+      toast.success('PDF has been successfully exported: assigned_offices.pdf');
+    };
   };
 
   if (loading) {
@@ -148,6 +185,19 @@ const AssignedOfficesPage = () => {
               className="border p-2 w-full"
               style={{ flex: 1 }}
             />
+            <select
+              value={selectedDepartment}
+              onChange={handleDepartmentChange}
+              className="border p-2 w-full"
+              style={{ flex: 1 }}
+            >
+              <option value="All Departments">All Departments</option>
+              {Array.from(new Set(data.map(item => item.department))).map(dept => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
           </div>
           <div className="flex mb-4">
             <button
@@ -155,6 +205,12 @@ const AssignedOfficesPage = () => {
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mr-2"
             >
               Export to Excel
+            </button>
+            <button
+              onClick={exportToPDF}
+              className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
+            >
+              Export to PDF
             </button>
           </div>
           <ToastContainer
@@ -235,7 +291,7 @@ const AssignedOfficesPage = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         data={editData}
-        availableOffices={[]} // Add available offices data if needed
+        availableOffices={[]} 
         onUpdate={handleUpdate}
         onRemove={handleRemove}
       />
