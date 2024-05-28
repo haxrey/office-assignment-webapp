@@ -3,6 +3,7 @@ import React from 'react';
 import { Line } from 'react-chartjs-2';
 import 'chart.js/auto';
 
+//mock component for resource monitor currently disabled (not in use)
 const ResourceMonitor = () => {
   const data = {
     labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],

@@ -1,6 +1,6 @@
 
 import React from 'react';
-
+//mock component for optimization status currently disabled (not in use)
 const OptimizationStatus = () => {
 
   const status = {

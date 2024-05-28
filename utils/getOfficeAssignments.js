@@ -30,15 +30,15 @@ async function generateOfficeAssignmentsExcel() {
     const workbook = new exceljs.Workbook();
     const worksheet = workbook.addWorksheet('Office Assignments');
 
-    // Litearlly just headers :)
+    // Litearlly just headers
     worksheet.addRow(['ID', 'User', 'Office', 'Assigned Date']);
 
-    // this one adds the data to the worksheet!
+    // this one adds the data to the worksheet
     data.forEach(({ id, user, office, assignedDate }) => {
         worksheet.addRow([id, user.username, office.officeNumber, assignedDate.toISOString()]);
     });
 
-    // Saves the workbook to a file :>
+    // Saves the workbook to a file 
     await workbook.xlsx.writeFile('office_assignments.xlsx');
     console.log('Excel file has been created and saved as "office_assignments.xlsx"');
 }

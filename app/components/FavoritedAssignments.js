@@ -6,6 +6,7 @@ import 'react-toastify/dist/ReactToastify.css';
 const FavoritedAssignments = () => {
   const [favorites, setFavorites] = useState([]);
 
+  // Load favorites from local storage
   useEffect(() => {
     const storedFavorites = JSON.parse(localStorage.getItem('favorites')) || [];
     setFavorites(storedFavorites);

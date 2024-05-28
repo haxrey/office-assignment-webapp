@@ -1,5 +1,5 @@
 import React from 'react';
-
+//mock component for office inventory currently disabled (not in use)
 const OfficeInventory = () => {
   return (
     <section className="inventory-section max-w-4xl mx-auto">

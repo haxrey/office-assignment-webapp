@@ -18,10 +18,11 @@ const InsertionPage = () => {
   const [officeFormData, setOfficeFormData] = useState({
     officeNumber: '',
     capacity: '',
-    location: 'D Building',
+    location: 'D Building', //Made this a default location
     floor: '',
   });
 
+  // fetches the departments for the dropdown menu straight from the database to make sure the data is up to date! :)
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -36,6 +37,7 @@ const InsertionPage = () => {
     fetchDepartments();
   }, []);
 
+  //handelrs for the form data
   const handleStaffChange = (e) => {
     const { name, value } = e.target;
     setStaffFormData({ ...staffFormData, [name]: value });

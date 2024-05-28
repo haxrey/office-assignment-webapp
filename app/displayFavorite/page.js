@@ -8,6 +8,7 @@ import SideNavbar from '../components/SideNavbar';
 import Header from '../components/Header';
 import Logo from '../components/Logo';
 
+// DisplayFavorite page appears when a user clicks on a favorited assignment
 const DisplayFavorite = () => {
   const searchParams = useSearchParams();
   const file = searchParams.get('file');

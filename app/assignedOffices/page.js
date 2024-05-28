@@ -13,6 +13,7 @@ import SideNavbar from '../components/SideNavbar';
 import Header from '../components/Header';
 import Logo from '../components/Logo';
 
+// Fetches the office assignments from the database 
 const fetchOfficeAssignments = async () => {
   try {
     const response = await fetch('/api/getStaffAssignments');
@@ -24,6 +25,7 @@ const fetchOfficeAssignments = async () => {
   }
 };
 
+// Fetches the available offices from the database so that they can be assigned to the staff
 const fetchAvailableOffices = async () => {
   try {
     const response = await fetch('/api/getAvailableOffices');
@@ -34,7 +36,7 @@ const fetchAvailableOffices = async () => {
     throw new Error('Error fetching available offices');
   }
 };
-
+//method for the update button to handle the update of the office assignment straight from the database
 const updateOfficeAssignment = async (assignmentData) => {
   try {
     const response = await fetch('/api/updateOfficeAssignment', {
@@ -55,7 +57,7 @@ const updateOfficeAssignment = async (assignmentData) => {
     toast.error(`Failed to update the assignment: ${error.message}`);
   }
 };
-
+// Cont for the edit button, after clicking on it a delete button will appear to remove the assignment
 const removeOfficeAssignment = async (assignmentData) => {
   try {
     const response = await fetch('/api/removeOfficeAssignment', {
@@ -76,7 +78,7 @@ const removeOfficeAssignment = async (assignmentData) => {
     toast.error(`Failed to remove the assignment: ${error.message}`);
   }
 };
-
+// EditModal component to edit the office assignments
 const EditModal = ({ isOpen, onClose, data, availableOffices, onUpdate, onRemove }) => {
   const [formData, setFormData] = useState({ ...data });
 
@@ -174,7 +176,7 @@ const EditModal = ({ isOpen, onClose, data, availableOffices, onUpdate, onRemove
     </div>
   );
 };
-
+//AssignedOfficesPage component to display the assigned offices
 const AssignedOfficesPage = () => {
   const searchParams = useSearchParams();
   const initialDepartment = searchParams.get('department') || 'All Faculty';
@@ -190,7 +192,7 @@ const AssignedOfficesPage = () => {
   const [editData, setEditData] = useState(null);
   const [isInfoOpen, setIsInfoOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-
+//for the dropdown menu to select the department
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
@@ -221,7 +223,7 @@ const AssignedOfficesPage = () => {
         toast.error('Error fetching available offices');
       }
     };
-
+//loading data from the previous page to the current page
     const loadData = async () => {
       await fetchDepartments();
       await fetchData();
@@ -232,6 +234,7 @@ const AssignedOfficesPage = () => {
     loadData();
   }, []);
 
+  //filtering the data based on the selected department
   const data = useMemo(() => {
     if (selectedDepartment === 'All Faculty') return staffMembers;
     return staffMembers.filter(person => person.department === selectedDepartment);
