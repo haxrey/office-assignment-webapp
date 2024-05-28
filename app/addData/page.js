@@ -4,6 +4,8 @@ import SideNavbar from "../components/SideNavbar";
 import Header from '../components/Header';
 import Logo from '../components/Logo';
 import axios from 'axios';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const InsertionPage = () => {
   const [departments, setDepartments] = useState([]);
@@ -15,9 +17,9 @@ const InsertionPage = () => {
   });
   const [officeFormData, setOfficeFormData] = useState({
     officeNumber: '',
-    capacity: 0,
-    location: '',
-    floor: 1,
+    capacity: '',
+    location: 'D Building',
+    floor: '',
   });
 
   useEffect(() => {
@@ -25,8 +27,8 @@ const InsertionPage = () => {
       try {
         const response = await axios.get('/api/departments');
         setDepartments(response.data);
-        console.log('Departments fetched:', response.data); // Debug log
       } catch (error) {
+        toast.error('Failed to fetch departments');
         console.error('Failed to fetch departments:', error);
       }
     };
@@ -54,10 +56,10 @@ const InsertionPage = () => {
         role: '',
         departmentId: '',
       });
-      alert("Staff added successfully!");
+      toast.success("Staff added successfully!");
     } catch (error) {
       console.error('Failed to add staff:', error);
-      alert("Failed to add staff.");
+      toast.error("Failed to add staff.");
     }
   };
 
@@ -67,14 +69,14 @@ const InsertionPage = () => {
       await axios.post('/api/offices', officeFormData);
       setOfficeFormData({
         officeNumber: '',
-        capacity: 0,
-        location: '',
-        floor: 1,
+        capacity: '',
+        location: 'D Building',
+        floor: '',
       });
-      alert("Office added successfully!");
+      toast.success("Office added successfully!");
     } catch (error) {
       console.error('Failed to add office:', error);
-      alert("Failed to add office.");
+      toast.error("Failed to add office.");
     }
   };
 
@@ -143,28 +145,32 @@ const InsertionPage = () => {
                 className="border border-gray-300 rounded p-2 w-full"
               />
               <input
-                type="number"
+                type="text"
                 name="capacity"
                 placeholder="Capacity"
                 value={officeFormData.capacity}
                 onChange={handleOfficeChange}
                 className="border border-gray-300 rounded p-2 w-full"
+                inputMode="numeric"
+                pattern="\d*"
               />
-              <input
-                type="text"
+              <select
                 name="location"
-                placeholder="Location"
                 value={officeFormData.location}
                 onChange={handleOfficeChange}
                 className="border border-gray-300 rounded p-2 w-full"
-              />
+              >
+                <option value="D Building">D Building</option>
+              </select>
               <input
-                type="number"
+                type="text"
                 name="floor"
                 placeholder="Floor"
                 value={officeFormData.floor}
                 onChange={handleOfficeChange}
                 className="border border-gray-300 rounded p-2 w-full"
+                inputMode="numeric"
+                pattern="\d*"
               />
               <button type="submit" className="bg-blue-500 text-white rounded p-2">
                 Add Office
@@ -174,6 +180,7 @@ const InsertionPage = () => {
         </div>
         <Logo />
       </div>
+      <ToastContainer position="top-right" autoClose={5000} hideProgressBar={false} newestOnTop={false} closeOnClick rtl={false} pauseOnFocusLoss draggable pauseOnHover />
     </div>
   );
 };

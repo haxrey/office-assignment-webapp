@@ -5,9 +5,10 @@ const prisma = new PrismaClient();
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { officeNumber, capacity, location, floor } = req.body;
+    console.log('Received office data:', { officeNumber, capacity, location, floor });
     try {
       const newOffice = await prisma.office.create({
-        data: { officeNumber, capacity, location, floor },
+        data: { officeNumber, capacity: parseInt(capacity), location, floor: parseInt(floor) },
       });
       res.status(201).json(newOffice);
     } catch (error) {
